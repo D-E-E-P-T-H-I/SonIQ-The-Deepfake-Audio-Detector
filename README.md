@@ -60,8 +60,8 @@ The system converts audio signals into time–frequency representations and uses
 
 ## Performance
 
-- **Accuracy**: 98% (evaluated on completely unseen speakers)
-- **AUC**: >0.99
+- **Accuracy**: 97% (evaluated on completely unseen speakers)
+- **AUC**: 0.9941
 - Evaluation metrics include precision, recall, F1-score, ROC curve, and confusion matrix
 - Guaranteed zero speaker-leakage due to strict identity-based train/test splitting.
 
