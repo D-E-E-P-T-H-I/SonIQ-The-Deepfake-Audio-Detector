@@ -1,0 +1,20 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Datasets
+release_in_the_wild/
+release_in_the_wild.zip
+processed_data/
+
+# Models
+*.keras
+*.pkl
+*.h5
+
+# Outputs
+gradcam_outputs/
+*.png
