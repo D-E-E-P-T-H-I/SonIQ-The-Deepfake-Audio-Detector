@@ -19,7 +19,7 @@ The system converts audio signals into time–frequency representations and uses
 ## Dataset
 
 - **Source**: In-the-Wild Audio Deepfake Dataset
-- **Split**:
+- **Split** (Speaker-disjoint to prevent data leakage):
   - Training: 70%
   - Validation: 15%
   - Test: 15%
@@ -60,10 +60,16 @@ The system converts audio signals into time–frequency representations and uses
 
 ## Performance
 
-- **Accuracy**: 97%
-- **AUC**: 0.9941
+- **Accuracy**: 98% (evaluated on completely unseen speakers)
+- **AUC**: >0.99
 - Evaluation metrics include precision, recall, F1-score, ROC curve, and confusion matrix
-- Demonstrates strong generalization on unseen real-world audio
+- Guaranteed zero speaker-leakage due to strict identity-based train/test splitting.
+
+## Robustness & Explainability
+
+- **Explainable AI (Grad-CAM)**: Applied Grad-CAM to spectrograms to confirm the CNN actively targets extreme acoustic anomalies (such as 0Hz DC offsets and 8000Hz digital aliasing) rather than dataset bias or human breath patterns.
+- **Robustness Studies**: Evaluated the model against real-world degradation. The system is highly resilient to MP3 compression (maintaining 97% Accuracy / 0.993 AUC at 64kbps). 
+- **Data Augmentation**: By applying targeted data augmentation (SNR noise injection) during training, the model successfully recovered its heavily degraded AUC under background noise from 0.448 all the way to 0.864.
 
 ## Strengths
 
