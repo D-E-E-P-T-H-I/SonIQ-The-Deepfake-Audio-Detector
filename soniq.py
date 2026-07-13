@@ -27,7 +27,9 @@ def preprocess_audio(audio_path, target_sr=16000, duration=5.0):
 
         target_length = int(target_sr * duration)
         if len(audio) < target_length:
-            audio = np.pad(audio, (0, target_length - len(audio)))
+            # Fix: Use mode='wrap' instead of zero-padding to avoid artifacts
+            pad_length = target_length - len(audio)
+            audio = np.pad(audio, (0, pad_length), mode='wrap')
         else:
             audio = audio[:target_length]
 
@@ -58,29 +60,42 @@ def split_dataset(source_folder, dest_folder):
     meta_path = os.path.join(source_folder, 'meta.csv')
     df = pd.read_csv(meta_path)
     
-    fake_files = df[df['label'] == 'spoof']['file'].tolist()
-    real_files = df[df['label'] == 'bona-fide']['file'].tolist()
-    random.shuffle(fake_files)
-    random.shuffle(real_files)
-
-    for cls, files in [('fake', fake_files), ('real', real_files)]:
-        n = len(files)
-        train_end = int(0.7 * n)
-        val_end = int(0.85 * n)
-
-        for i, f in enumerate(files):
-            if i < train_end:
-                split = 'train'
-            elif i < val_end:
-                split = 'val'
-            else:
-                split = 'test'
+    # Fix: Split by speaker to prevent data leakage
+    speakers = df['speaker'].unique().tolist()
+    random.shuffle(speakers)
+    
+    n_speakers = len(speakers)
+    train_end = int(0.7 * n_speakers)
+    val_end = int(0.85 * n_speakers)
+    
+    train_speakers = set(speakers[:train_end])
+    val_speakers = set(speakers[train_end:val_end])
+    test_speakers = set(speakers[val_end:])
+    
+    # Assign files to splits based on speaker
+    split_counts = {'train': {'real': 0, 'fake': 0}, 'val': {'real': 0, 'fake': 0}, 'test': {'real': 0, 'fake': 0}}
+    
+    for _, row in df.iterrows():
+        speaker = row['speaker']
+        filename = row['file']
+        label = row['label']
+        cls = 'fake' if label == 'spoof' else 'real'
+        
+        if speaker in train_speakers:
+            split = 'train'
+        elif speaker in val_speakers:
+            split = 'val'
+        else:
+            split = 'test'
             
-            src_path = os.path.join(source_folder, f)
-            if os.path.exists(src_path):
-                shutil.copy(src_path, os.path.join(dest_folder, split, cls, f))
+        src_path = os.path.join(source_folder, filename)
+        if os.path.exists(src_path):
+            shutil.copy(src_path, os.path.join(dest_folder, split, cls, filename))
+            split_counts[split][cls] += 1
 
-        print(f"{cls}: Train={train_end}, Val={val_end-train_end}, Test={n-val_end}")
+    print("Splits generated based on speaker identities:")
+    for split in ['train', 'val', 'test']:
+        print(f"{split.capitalize()}: Real={split_counts[split]['real']}, Fake={split_counts[split]['fake']}")
 
 def augment_with_noise(audio, snr_range=(15, 40)):
     snr_db = np.random.uniform(*snr_range)
